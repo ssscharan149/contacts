@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/contacts")
 @CrossOrigin(origins = "*")
 public class ContactController {
 
@@ -30,26 +29,22 @@ public class ContactController {
         this.contactService = contactService;
     }
 
-    @PostMapping("/users/{userId}/contacts")
-    public ResponseEntity<ContactResponse> create(
-            @PathVariable Long userId,
-            @Valid @RequestBody ContactRequest request
-    ) {
-        ContactResponse response = contactService.create(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @PostMapping
+    public ResponseEntity<ContactResponse> create(@Valid @RequestBody ContactRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(contactService.create(request));
     }
 
-    @GetMapping("/users/{userId}/contacts")
-    public List<ContactResponse> getAllByUser(@PathVariable Long userId) {
-        return contactService.getAllByUser(userId);
+    @GetMapping
+    public List<ContactResponse> getAll() {
+        return contactService.getAll();
     }
 
-    @GetMapping("/contacts/{contactId}")
+    @GetMapping("/{contactId}")
     public ContactResponse getById(@PathVariable Long contactId) {
         return contactService.getById(contactId);
     }
 
-    @PutMapping("/contacts/{contactId}")
+    @PutMapping("/{contactId}")
     public ContactResponse update(
             @PathVariable Long contactId,
             @Valid @RequestBody ContactRequest request
@@ -57,17 +52,7 @@ public class ContactController {
         return contactService.update(contactId, request);
     }
 
-    @PatchMapping("/contacts/{contactId}/favorite")
-    public ContactResponse toggleFavourite(@PathVariable Long contactId) {
-        return contactService.toggleFavourite(contactId);
-    }
-
-    @PatchMapping("/contacts/{contactId}/favorite/true")
-    public ContactResponse markFavouriteTrue(@PathVariable Long contactId) {
-        return contactService.markFavouriteTrue(contactId);
-    }
-
-    @DeleteMapping("/contacts/{contactId}")
+    @DeleteMapping("/{contactId}")
     public ResponseEntity<Void> delete(@PathVariable Long contactId) {
         contactService.delete(contactId);
         return ResponseEntity.noContent().build();

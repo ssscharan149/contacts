@@ -3,9 +3,9 @@ package com.example.backend.dto;
 public record ContactResponse(
         Long id,
         String name,
-        String phoneNumber,
-        Boolean favourite,
+        String phone,
         String email,
-        Long userId
+        String company,
+        String city
 ) {
 }

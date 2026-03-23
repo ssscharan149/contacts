@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 
 const emptyForm = {
   id: '',
-  fullName: '',
-  email: '',
+  name: '',
   phone: '',
+  email: '',
   company: '',
   city: '',
 }
@@ -20,9 +20,9 @@ function EditContactModal({ contact, onSave, onCancel }) {
 
     setFormData({
       id: contact.id,
-      fullName: contact.fullName ?? '',
-      email: contact.email ?? '',
+      name: contact.name ?? '',
       phone: contact.phone ?? '',
+      email: contact.email ?? '',
       company: contact.company ?? '',
       city: contact.city ?? '',
     })
@@ -51,10 +51,19 @@ function EditContactModal({ contact, onSave, onCancel }) {
         <h2>Edit Contact</h2>
         <form className="contact-form" onSubmit={handleSubmit}>
           <label>
-            Full name *
+            Name *
             <input
-              name="fullName"
-              value={formData.fullName}
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+          </label>
+          <label>
+            Phone number *
+            <input
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
               required
             />
@@ -65,15 +74,6 @@ function EditContactModal({ contact, onSave, onCancel }) {
               name="email"
               type="email"
               value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
-            Phone *
-            <input
-              name="phone"
-              value={formData.phone}
               onChange={handleChange}
               required
             />

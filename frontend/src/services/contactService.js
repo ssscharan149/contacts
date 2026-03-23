@@ -2,28 +2,75 @@ import {
   createErrorResponse,
   createSuccessResponse,
 } from '../constants/responseFormat'
-import { dummyContacts } from '../data/dummyContacts'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
-let contactsStore = [...dummyContacts]
+function mapContactResponseToContact(contact) {
+  return {
+    id: String(contact.id),
+    name: contact.name,
+    fullName: contact.name,
+    email: contact.email,
+    phone: contact.phone,
+    company: contact.company ?? '',
+    city: contact.city ?? '',
+  }
+}
 
-function wait(delay = 120) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, delay)
-  })
+async function request(path, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      ...options,
+    })
+
+    if (response.status === 204) {
+      return { ok: true, data: null }
+    }
+
+    const body = await response.json()
+    if (!response.ok) {
+      const message = body?.message ?? 'Request failed'
+      return {
+        ok: false,
+        message,
+        errors: [{ field: 'server', message }],
+      }
+    }
+
+    return { ok: true, data: body }
+  } catch {
+    return {
+      ok: false,
+      message: 'Unable to connect to backend. Ensure Spring Boot is running on port 8080.',
+      errors: [
+        {
+          field: 'network',
+          message: 'Connection refused or backend unavailable.',
+        },
+      ],
+    }
+  }
 }
 
 export async function getContacts({ searchTerm = '', page = 1, pageSize = 5 } = {}) {
-  await wait()
+  const result = await request('/api/contacts')
+  if (!result.ok) {
+    return createErrorResponse(result.message, result.errors)
+  }
 
+  const contacts = result.data.map(mapContactResponseToContact)
   const normalized = searchTerm.trim().toLowerCase()
-  const filtered = contactsStore.filter((contact) => {
+  const filtered = contacts.filter((contact) => {
     if (!normalized) {
       return true
     }
 
     return (
-      contact.fullName.toLowerCase().includes(normalized) ||
-      contact.email.toLowerCase().includes(normalized)
+      contact.email.toLowerCase().includes(normalized) ||
+      contact.name.toLowerCase().includes(normalized) ||
+      contact.phone.toLowerCase().includes(normalized)
     )
   })
 
@@ -49,105 +96,86 @@ export async function getContacts({ searchTerm = '', page = 1, pageSize = 5 } = 
 }
 
 export async function createContact(payload) {
-  await wait()
-
-  if (!payload.fullName || !payload.email || !payload.phone) {
+  if (
+    !payload.email?.trim() ||
+    !payload.name?.trim() ||
+    !payload.phone?.trim()
+  ) {
     return createErrorResponse('Missing required fields', [
       {
-        field: 'fullName | email | phone',
-        message: 'Required fields are missing in the request body.',
+        field: 'name | phone | email',
+        message: 'Name, phone and email are required.',
       },
     ])
   }
 
-  const newContact = {
-    id: crypto.randomUUID(),
-    fullName: payload.fullName.trim(),
-    email: payload.email.trim(),
-    phone: payload.phone.trim(),
-    company: payload.company?.trim() ?? '',
-    city: payload.city?.trim() ?? '',
+  const result = await request('/api/contacts', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: payload.name.trim(),
+      phone: payload.phone.trim(),
+      email: payload.email.trim(),
+      company: payload.company?.trim() ?? '',
+      city: payload.city?.trim() ?? '',
+    }),
+  })
+
+  if (!result.ok) {
+    return createErrorResponse(result.message, result.errors)
   }
 
-  contactsStore = [newContact, ...contactsStore]
-  return createSuccessResponse(newContact, 'Contact created successfully')
+  return createSuccessResponse(mapContactResponseToContact(result.data), 'Contact created successfully')
 }
 
 export async function getContactById(id) {
-  await wait()
-
-  const contact = contactsStore.find((item) => item.id === id)
-  if (!contact) {
-    return createErrorResponse('Contact not found', [
-      {
-        field: 'id',
-        message: 'No contact exists for the provided id.',
-      },
-    ])
+  const result = await request(`/api/contacts/${id}`)
+  if (!result.ok) {
+    return createErrorResponse(result.message, result.errors)
   }
 
-  return createSuccessResponse(contact, 'Contact fetched successfully')
+  return createSuccessResponse(mapContactResponseToContact(result.data), 'Contact fetched successfully')
 }
 
 export async function updateContact(id, payload) {
-  await wait()
-
-  const index = contactsStore.findIndex((item) => item.id === id)
-  if (index < 0) {
-    return createErrorResponse('Contact not found', [
-      {
-        field: 'id',
-        message: 'No contact exists for the provided id.',
-      },
-    ])
-  }
-
-  if (!payload.fullName || !payload.email || !payload.phone) {
+  if (
+    !payload.email?.trim() ||
+    !payload.name?.trim() ||
+    !payload.phone?.trim()
+  ) {
     return createErrorResponse('Missing required fields', [
       {
-        field: 'fullName | email | phone',
-        message: 'Required fields are missing in the request body.',
+        field: 'name | phone | email',
+        message: 'Name, phone and email are required.',
       },
     ])
   }
 
-  const updatedContact = {
-    ...contactsStore[index],
-    fullName: payload.fullName.trim(),
-    email: payload.email.trim(),
-    phone: payload.phone.trim(),
-    company: payload.company?.trim() ?? '',
-    city: payload.city?.trim() ?? '',
-  }
-
-  contactsStore = contactsStore.map((contact, currentIndex) => {
-    if (currentIndex === index) {
-      return updatedContact
-    }
-
-    return contact
+  const result = await request(`/api/contacts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      name: payload.name.trim(),
+      phone: payload.phone.trim(),
+      email: payload.email.trim(),
+      company: payload.company?.trim() ?? '',
+      city: payload.city?.trim() ?? '',
+    }),
   })
 
-  return createSuccessResponse(updatedContact, 'Contact updated successfully')
+  if (!result.ok) {
+    return createErrorResponse(result.message, result.errors)
+  }
+
+  return createSuccessResponse(mapContactResponseToContact(result.data), 'Contact updated successfully')
 }
 
 export async function deleteContact(id) {
-  await wait()
+  const result = await request(`/api/contacts/${id}`, {
+    method: 'DELETE',
+  })
 
-  const existing = contactsStore.find((item) => item.id === id)
-  if (!existing) {
-    return createErrorResponse('Contact not found', [
-      {
-        field: 'id',
-        message: 'No contact exists for the provided id.',
-      },
-    ])
+  if (!result.ok) {
+    return createErrorResponse(result.message, result.errors)
   }
 
-  contactsStore = contactsStore.filter((item) => item.id !== id)
   return createSuccessResponse({ id }, 'Contact deleted successfully')
-}
-
-export function resetContactsStore() {
-  contactsStore = [...dummyContacts]
 }

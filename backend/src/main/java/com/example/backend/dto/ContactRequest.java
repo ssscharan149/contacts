@@ -6,11 +6,12 @@ import jakarta.validation.constraints.NotBlank;
 public record ContactRequest(
         @NotBlank(message = "Name is required")
         String name,
-        @NotBlank(message = "Phone number is required")
-        String phoneNumber,
+        @NotBlank(message = "Phone is required")
+        String phone,
         @NotBlank(message = "Email is required")
         @Email(message = "Email format is invalid")
         String email,
-        Boolean favourite
+        String company,
+        String city
 ) {
 }

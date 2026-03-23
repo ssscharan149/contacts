@@ -10,7 +10,7 @@ function ContactList({ contacts, onView, onEdit, onDelete }) {
           <article className="contact-card">
             <h3>{contact.fullName}</h3>
             <p>{contact.email}</p>
-            <p>{contact.phone}</p>
+            <p>{contact.phone || 'N/A'}</p>
             <p>
               {contact.company || 'N/A'} • {contact.city || 'N/A'}
             </p>
