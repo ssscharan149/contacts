@@ -2,13 +2,9 @@ package com.example.backend.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -23,24 +19,16 @@ public class Contact {
     private String name;
 
     @Column(nullable = false)
-    private String phoneNumber;
-
-    @Column(nullable = false)
-    private Boolean favourite;
+    private String phone;
 
     @Column(nullable = false)
     private String email;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column
+    private String company;
 
-    @PrePersist
-    public void setDefaultFavourite() {
-        if (favourite == null) {
-            favourite = Boolean.FALSE;
-        }
-    }
+    @Column
+    private String city;
 
     public Long getId() {
         return id;
@@ -58,20 +46,12 @@ public class Contact {
         this.name = name;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public Boolean getFavourite() {
-        return favourite;
-    }
-
-    public void setFavourite(Boolean favourite) {
-        this.favourite = favourite;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getEmail() {
@@ -82,11 +62,19 @@ public class Contact {
         this.email = email;
     }
 
-    public User getUser() {
-        return user;
+    public String getCompany() {
+        return company;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 }

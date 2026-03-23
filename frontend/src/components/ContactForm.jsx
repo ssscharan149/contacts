@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
 const initialFormState = {
-  fullName: '',
-  email: '',
+  name: '',
   phone: '',
+  email: '',
   company: '',
   city: '',
 }
@@ -28,10 +28,20 @@ function ContactForm({ onSubmit }) {
   return (
     <form className="contact-form" onSubmit={handleSubmit}>
       <label>
-        Full name *
+        Name *
         <input
-          name="fullName"
-          value={formData.fullName}
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+      </label>
+
+      <label>
+        Phone number *
+        <input
+          name="phone"
+          value={formData.phone}
           onChange={handleChange}
           required
         />
@@ -43,16 +53,6 @@ function ContactForm({ onSubmit }) {
           name="email"
           type="email"
           value={formData.email}
-          onChange={handleChange}
-          required
-        />
-      </label>
-
-      <label>
-        Phone *
-        <input
-          name="phone"
-          value={formData.phone}
           onChange={handleChange}
           required
         />

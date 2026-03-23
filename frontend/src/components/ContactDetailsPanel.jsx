@@ -13,8 +13,12 @@ function ContactDetailsPanel({ contact, onClose }) {
       </div>
       <dl>
         <div>
-          <dt>Full name</dt>
-          <dd>{contact.fullName}</dd>
+          <dt>Contact ID</dt>
+          <dd>{contact.id}</dd>
+        </div>
+        <div>
+          <dt>Name</dt>
+          <dd>{contact.name || 'N/A'}</dd>
         </div>
         <div>
           <dt>Email</dt>
@@ -22,7 +26,7 @@ function ContactDetailsPanel({ contact, onClose }) {
         </div>
         <div>
           <dt>Phone</dt>
-          <dd>{contact.phone}</dd>
+          <dd>{contact.phone || 'N/A'}</dd>
         </div>
         <div>
           <dt>Company</dt>
