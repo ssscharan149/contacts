@@ -1,120 +1,180 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
+import ContactForm from './components/ContactForm'
+import ContactDetailsPanel from './components/ContactDetailsPanel'
+import DeleteContactDialog from './components/DeleteContactDialog'
+import EditContactModal from './components/EditContactModal'
+import ContactList from './components/ContactList'
+import JsonPreview from './components/JsonPreview'
+import PaginationControls from './components/PaginationControls'
+import { createErrorResponse } from './constants/responseFormat'
+import {
+  createContact,
+  deleteContact,
+  getContactById,
+  getContacts,
+  updateContact,
+} from './services/contactService'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [contacts, setContacts] = useState([])
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 5,
+    total: 0,
+    totalPages: 1,
+  })
+  const [searchTerm, setSearchTerm] = useState('')
+  const [apiResponse, setApiResponse] = useState(null)
+  const [selectedContact, setSelectedContact] = useState(null)
+  const [editContact, setEditContact] = useState(null)
+  const [deleteCandidate, setDeleteCandidate] = useState(null)
+
+  useEffect(() => {
+    loadContacts({ nextSearchTerm: '', nextPage: 1 })
+  }, [])
+
+  const loadContacts = async ({ nextSearchTerm = searchTerm, nextPage = pagination.page }) => {
+    const response = await getContacts({
+      searchTerm: nextSearchTerm,
+      page: nextPage,
+      pageSize: pagination.pageSize,
+    })
+    setApiResponse(response)
+
+    if (response.status === 'success') {
+      setContacts(response.data.items)
+      setPagination(response.data.pagination)
+      return
+    }
+
+    setContacts([])
+  }
+
+  const handleSearchChange = async (event) => {
+    const nextSearchTerm = event.target.value
+    setSearchTerm(nextSearchTerm)
+    await loadContacts({ nextSearchTerm, nextPage: 1 })
+  }
+
+  const handleCreateContact = async (formData) => {
+    const response = await createContact(formData)
+    setApiResponse(response)
+
+    if (response.status !== 'success') {
+      return
+    }
+
+    await loadContacts({ nextSearchTerm: searchTerm, nextPage: 1 })
+  }
+
+  const handleSelectContact = async (id) => {
+    const response = await getContactById(id)
+    setApiResponse(response)
+    if (response.status === 'success') {
+      setSelectedContact(response.data)
+    }
+  }
+
+  const handleOpenEdit = (contact) => {
+    setEditContact(contact)
+  }
+
+  const handleEditSave = async (updatedContact) => {
+    const response = await updateContact(updatedContact.id, updatedContact)
+    setApiResponse(response)
+    if (response.status === 'success') {
+      setEditContact(null)
+      if (selectedContact?.id === updatedContact.id) {
+        setSelectedContact(response.data)
+      }
+      await loadContacts({ nextSearchTerm: searchTerm, nextPage: pagination.page })
+    }
+  }
+
+  const handleDeleteRequest = (contact) => {
+    setDeleteCandidate(contact)
+  }
+
+  const handleDeleteConfirm = async (id) => {
+    const response = await deleteContact(id)
+    setApiResponse(response)
+    if (response.status === 'success') {
+      setDeleteCandidate(null)
+      if (selectedContact?.id === id) {
+        setSelectedContact(null)
+      }
+      await loadContacts({ nextSearchTerm: searchTerm, nextPage: pagination.page })
+    }
+  }
+
+  const handlePageChange = async (nextPage) => {
+    if (nextPage < 1 || nextPage > pagination.totalPages) {
+      return
+    }
+
+    await loadContacts({ nextSearchTerm: searchTerm, nextPage })
+  }
+
+  const sampleErrorFormat = createErrorResponse('Validation failed', [
+    { field: 'email', message: 'Invalid email format' },
+  ])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+    <div className="app-shell">
+      <header className="page-header">
+        <h1>Contacts App</h1>
+        <p>Sample frontend using dummy data and standard JSON response format.</p>
+      </header>
+
+      <main className="page-main">
+        <section className="panel">
+          <h2>Create Contact</h2>
+          <ContactForm onSubmit={handleCreateContact} />
+        </section>
+
+        <section className="panel">
+          <div className="list-header">
+            <h2>Contact List</h2>
+            <input
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by name or email"
+              aria-label="Search contacts"
+            />
+          </div>
+          <ContactList
+            contacts={contacts}
+            onView={handleSelectContact}
+            onEdit={handleOpenEdit}
+            onDelete={handleDeleteRequest}
+          />
+          <PaginationControls
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </section>
+      </main>
+
+      <ContactDetailsPanel contact={selectedContact} onClose={() => setSelectedContact(null)} />
+
+      <section className="panel json-panels">
+        <JsonPreview title="Last API Response (Success Contract)" payload={apiResponse} />
+        <JsonPreview title="Error Contract Example" payload={sampleErrorFormat} />
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <EditContactModal
+        contact={editContact}
+        onSave={handleEditSave}
+        onCancel={() => setEditContact(null)}
+      />
+      <DeleteContactDialog
+        contact={deleteCandidate}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteCandidate(null)}
+      />
+    </div>
   )
 }
 
